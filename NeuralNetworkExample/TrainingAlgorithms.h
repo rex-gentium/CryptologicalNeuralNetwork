@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include <string>
 
 class TrainingAlgorithms
@@ -18,10 +19,10 @@ class TrainingAlgorithms
 		Point randomInnerPoint() const;
 	};
 public:
-	static const unsigned int num_input = 200;
-	static const unsigned int num_output = 100;
-	static const unsigned int num_layers = 3;
-	static const unsigned int num_neurons_hidden = 3000;
+	static const unsigned int num_input = 2;
+	static const unsigned int num_output = 1;
+	static const unsigned int num_layers = 5;
+	static const unsigned int num_neurons_hidden = 8;
 	static const float desired_error;
 	static const unsigned int max_epochs = 500000;
 	static const unsigned int epochs_between_reports = 1000;
@@ -31,5 +32,7 @@ public:
 private:
 	static int * countByteFrequency(std::string filePath);
 	static int * rangeClusterCount(const int * frequencies, int minClusterValue, int maxClusterValue);
+	static std::vector<byte> getFileBytes(std::string filePath);
+	static std::vector<Point> getFilePoints(std::string filePath);
 };
 

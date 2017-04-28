@@ -2,6 +2,7 @@
 #include <fann.h>
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 const float TrainingAlgorithms::desired_error = 0.001f;
 
@@ -53,7 +54,7 @@ void TrainingAlgorithms::GridinSolodovnikov(std::string filePath)
 	// 1. частотный анализ файла по классам
 	int * freq = countByteFrequency(filePath);
 	// 2. ставим в соответсвие число областей и генерируем области
-	int * clusterCount = rangeClusterCount(freq, 1, 100);
+	int * clusterCount = rangeClusterCount(freq, 1, 10);
 	int sum = 0;
 	for (int i = 0; i < BYTE_MAX + 1; ++i)
 		sum += clusterCount[i];
@@ -78,24 +79,42 @@ void TrainingAlgorithms::GridinSolodovnikov(std::string filePath)
 		inputFile >> std::noskipws >> b;
 		int clusterNum = rand() % clusterCount[b];
 		Point cipherPoint = clusters[b][clusterNum].randomInnerPoint();
-		outputFile.write((char *)cipherPoint.getBytes(), 2 * sizeof(int));
+		byte * bytes = cipherPoint.getBytes();
+		outputFile.write((char *)bytes, 2 * sizeof(int));
+		delete[] bytes;
 	}
 	inputFile.close();
 	outputFile.close();
 
-	/*struct fann *ann = fann_create_standard(num_layers, num_input,
-		num_neurons_hidden, num_output);
+	// 4. тренируем дешифратор
+	std::vector<Point> points = getFilePoints(filePath + ".crypto");
+	std::vector<byte> bytes = getFileBytes(filePath);
+	struct fann_train_data * data = fann_create_train(points.size(), 2, 1);
+	for (int i = 0; i < points.size(); ++i) {
+		data->input[i][0] = (fann_type)points[i].x;
+		data->input[i][1] = (fann_type)points[i].y;
+		data->output[i][0] = (fann_type)bytes[i];
+	}
+	
 
-	fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
-	fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
+	//struct fann *ann = fann_create_standard(num_layers, num_input,
+	//	num_neurons_hidden, num_neurons_hidden, num_neurons_hidden, num_output);
 
-	fann_train_on_file(ann, filePath.c_str(), max_epochs,
-		epochs_between_reports, desired_error);
+	//fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
+	//fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
+	//fann_train_on_data(ann, data, max_epochs, epochs_between_reports, desired_error);
 
-	fann_save(ann, "xor_float.net");
+	//fann_save(ann, (filePath + "config" + ".net").c_str());
+	
+	struct fann *ann = fann_create_from_file((filePath + "config" + ".net").c_str());
 
-	fann_destroy(ann);*/
-
+	for (int i = 0; i < points.size(); ++i) {
+		int c = 0 + i;
+		std::cout << fann_run(ann, data->input[i]);
+	}
+	fann_destroy(ann);
+	points.clear();
+	bytes.clear();
 	delete[] freq;
 	delete[] clusterCount;
 	delete[] clusters;
@@ -132,4 +151,47 @@ int * TrainingAlgorithms::rangeClusterCount(const int * frequencies, int minClus
 	for (int i = 0; i < BYTE_MAX + 1; ++i)
 		clusters[i] = (int) floorf(k * frequencies[i] + minClusterValue);
 	return clusters;
+}
+
+std::vector<TrainingAlgorithms::byte> TrainingAlgorithms::getFileBytes(std::string filePath)
+{
+	std::vector<byte> bytes;
+	std::ifstream file(filePath, std::ios::binary);
+	byte b;
+	while (!file.eof()) {
+		file >> std::noskipws >> b;
+		bytes.push_back(b);
+	}
+	file.close();
+	return bytes;
+}
+
+std::vector<TrainingAlgorithms::Point> TrainingAlgorithms::getFilePoints(std::string filePath)
+{
+	std::vector<Point> points;
+	std::ifstream file(filePath, std::ios::binary);
+	
+	byte b;
+	while (!file.eof()) {
+		int x = 0, y = 0;
+		Point point;
+		for (int i = 0; i < sizeof(int); ++i) {
+			file >> std::noskipws >> b;
+			int byteAsInt = (int) b;
+			int shift = 8 * (sizeof(int) - i - 1);
+			x |= (byteAsInt << shift);
+		}
+		for (int i = 0; i < sizeof(int); ++i) {
+			file >> std::noskipws >> b;
+			int byteAsInt = (int)b;
+			int shift = 8 * (sizeof(int) - i - 1);
+			y |= (byteAsInt << shift);
+		}
+		point.x = x;
+		point.y = y;
+		points.push_back(point);
+	}
+	file.close();
+	points.pop_back();
+	return points;
 }

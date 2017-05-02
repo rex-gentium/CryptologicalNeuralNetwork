@@ -72,19 +72,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Documents\Visual Studio 2017\Projects\NeuralNetworkExample\FANN-2.2.0-Source\src\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Documents\Visual Studio 2017\Projects\NeuralNetworkExample\FANN-2.2.0-Source\bin;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\FANN-2.2.0-Source\src\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\FANN-2.2.0-Source\bin;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(VC_SourcePath);$(SolutionDir)\FANN-2.2.0-Source\src;</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)\FANN-2.2.0-Source\src\include;$(IncludePath)</IncludePath>
+    <SourcePath>$(VC_SourcePath);$(SolutionDir)\FANN-2.2.0-Source\src;</SourcePath>
+    <LibraryPath>$(SolutionDir)\FANN-2.2.0-Source\bin;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\Documents\Visual Studio 2017\Projects\NeuralNetworkExample\FANN-2.2.0-Source\src\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Documents\Visual Studio 2017\Projects\NeuralNetworkExample\FANN-2.2.0-Source\bin;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\FANN-2.2.0-Source\src\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\FANN-2.2.0-Source\bin;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(VC_SourcePath);$(SolutionDir)\FANN-2.2.0-Source\src;</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)\FANN-2.2.0-Source\src\include;$(IncludePath)</IncludePath>
+    <SourcePath>$(VC_SourcePath);$(SolutionDir)\FANN-2.2.0-Source\src;</SourcePath>
+    <LibraryPath>$(SolutionDir)\FANN-2.2.0-Source\bin;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -93,11 +101,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\FANN-2.2.0-Source\src\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>fanndouble.lib;fannfixed.lib;fannfloat.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Documents\Visual Studio 2017\Projects\NeuralNetworkExample\FANN-2.2.0-Source\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fannfloat.lib;fanndouble.lib;fannfixed.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\FANN-2.2.0-Source\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -107,9 +116,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\FANN-2.2.0-Source\src\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>fannfloat.lib;fanndouble.lib;fannfixed.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\FANN-2.2.0-Source\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -121,13 +133,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\FANN-2.2.0-Source\src\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>fanndouble.lib;fannfixed.lib;fannfloat.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Documents\Visual Studio 2017\Projects\NeuralNetworkExample\FANN-2.2.0-Source\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fannfloat.lib;fanndouble.lib;fannfixed.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\FANN-2.2.0-Source\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -139,19 +152,22 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\FANN-2.2.0-Source\src\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>fannfloat.lib;fanndouble.lib;fannfixed.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\FANN-2.2.0-Source\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp" />
-    <ClCompile Include="TrainingAlgorithms.cpp" />
+    <ClCompile Include="GridinSolodovnikov.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TrainingAlgorithms.h" />
+    <ClInclude Include="GridinSolodovnikov.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

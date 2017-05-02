@@ -18,12 +18,12 @@
     <ClCompile Include="Source.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="TrainingAlgorithms.cpp">
+    <ClCompile Include="GridinSolodovnikov.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TrainingAlgorithms.h">
+    <ClInclude Include="GridinSolodovnikov.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>

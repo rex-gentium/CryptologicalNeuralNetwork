@@ -14,7 +14,6 @@
     <ProjectGuid>{F556FB08-2D23-450B-AF1F-1E226DE08421}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>simple_train</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

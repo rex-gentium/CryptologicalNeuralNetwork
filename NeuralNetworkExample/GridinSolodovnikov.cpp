@@ -90,23 +90,28 @@ void GridinSolodovnikov::train(std::string directoryPath, std::string fileName)
 	// 4. формируем сет тренировочных данных
 	struct fann_train_data * encryptor_train_data = fann_create_train(points.size(), 1, 2);
 	struct fann_train_data * decryptor_train_data = fann_create_train(points.size(), 2, 1);
+	std::ofstream test_data_file("D:/data.dat");
+	test_data_file << points.size() << " 2 1" << std::endl;
 	for (int i = points.size() - 1; i >= 0; --i) {
 		decryptor_train_data->input[i][0] = encryptor_train_data->output[i][0] = points[i].x / static_cast<float>(INT_MAX);
 		decryptor_train_data->input[i][1] = encryptor_train_data->output[i][1] = points[i].y / static_cast<float>(INT_MAX);
+		test_data_file << decryptor_train_data->input[i][0] << ' ' << decryptor_train_data->input[i][1] << std::endl;
 		points.pop_back();
 		decryptor_train_data->output[i][0] = encryptor_train_data->input[i][0] = bytes[i] / 255.0f;
+		test_data_file << decryptor_train_data->output[i][0] << std::endl;
 		bytes.pop_back();
 	}
 	points.clear();
 	bytes.clear();
+	test_data_file.close();
 	// 5. тренируем шифратор и дешифратор
 	struct fann *encryptor = fann_create_standard(num_layers, 1, 256, 128, 64, 32, 16, 8, 4, 2);
-	struct fann *decryptor = fann_create_standard(4, 2, 256, 256, 1);
+	struct fann *decryptor = fann_create_standard(4, 2, 1024, 256, 1);
 	fann_set_activation_function_hidden(encryptor, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_output(encryptor, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_hidden(decryptor, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_output(decryptor, FANN_SIGMOID_SYMMETRIC);
-	fann_train_on_data(encryptor, encryptor_train_data, max_epochs, epochs_between_reports, 0.0000001f);
+	//fann_train_on_data(encryptor, encryptor_train_data, max_epochs, epochs_between_reports, 0.0000001f);
 	fann_train_on_data(decryptor, decryptor_train_data, max_epochs, epochs_between_reports, 0.0000001f);
 	
 	fann_save(encryptor, (directoryPath + ".encryptor").c_str());
@@ -127,8 +132,8 @@ std::string GridinSolodovnikov::cipher(std::string directoryPath, std::string fi
 		fann_type * output = fann_run(encryptor, (fann_type *)&b);
 		float x = output[0] * INT_MAX, y = output[1] * INT_MAX;
 		Point cipherPoint;
-		cipherPoint.x = static_cast<int>(floorf(x));
-		cipherPoint.y = static_cast<int>(floorf(y));
+		cipherPoint.x = static_cast<int>(roundf(x));
+		cipherPoint.y = static_cast<int>(roundf(y));
 		byte * bytes = cipherPoint.getBytes();
 		outputFile.write((char *)bytes, 2 * sizeof(int));
 		delete[] bytes;
@@ -185,7 +190,7 @@ int * GridinSolodovnikov::rangeClusterCount(const int * frequencies, int minClus
 	float k = (maxClusterValue - minClusterValue) / (float) maxFreq;
 	int * clusters = new int[BYTE_MAX + 1];
 	for (int i = 0; i < BYTE_MAX + 1; ++i)
-		clusters[i] = (int) floorf(k * frequencies[i] + minClusterValue);
+		clusters[i] = (int) roundf(k * frequencies[i] + minClusterValue);
 	return clusters;
 }
 

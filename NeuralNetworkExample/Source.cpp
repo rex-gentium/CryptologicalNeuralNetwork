@@ -1,10 +1,12 @@
 #include <chrono>
 #include "GridinSolodovnikov.h"
+#include "Ostrava.h"
 
 int main() {
 		
 	//std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-	GridinSolodovnikov::train("C:/dump/", "test.txt");
+	//Ostrava::train("D:/", "test.txt");
+	Ostrava::decrypt("D:/", "test1.txt.crypto");
 	//std::string encName = GridinSolodovnikov::cipher("C:/dump/", "test.txt");
 	//GridinSolodovnikov::decipher("C:/dump/", encName);
 	

@@ -1,18 +1,33 @@
-#include <chrono>
 #include "GridinSolodovnikov.h"
 #include "Ostrava.h"
+#include <string>
 
-int main() {
-		
-	//std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-	//Ostrava::train("D:/", "test.txt");
-	Ostrava::decrypt("D:/", "test1.txt.crypto");
-	//std::string encName = GridinSolodovnikov::cipher("C:/dump/", "test.txt");
-	//GridinSolodovnikov::decipher("C:/dump/", encName);
-	
-	//std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-	//std::chrono::duration<double, std::milli> time_span = t2 - t1;
-	//printf("ANN built in %lf milliseconds\n", time_span.count());
+/// <summary>
+/// This method should be called with execution parameters
+/// <para>argv[1] - directory, where the file and network config files are to be located, e.g. "C:\\dump/hello" or "C:/dump\\hello\\"</para>
+/// <para>argv[2] - file name, e.g. "myFile.txt"</para>
+/// <para>argv[3] - neural network mode, e.g. "train", "encrypt", "decrypt"</para>
+/// <para>Upon "train" completion, files "encryptor.net" and "decryptor.net" will appear in the same directory where the file is.</para>
+/// <para>Upon "encrypt" completion, file with the same name and .crypto extension will appear in the same directory, e.g. "myFile.txt" -> "myFile.txt.crypto".</para>
+/// <para>Upon "decrypt" completion, file with the same name and .decrypted extension will appear in the same directory, e.g. "myFile.txt.crypto" -> "myFile.txt.crypto.decrypted".</para>
+/// </summary>
+int main(int argc, const char * argv[])
+{
+	if (argc < 4) exit(1);
+
+	std::string directoryPath = argv[1];
+	if (directoryPath.back() != '\\' && directoryPath.back() != '/')
+		directoryPath += '\\';
+
+	std::string fileName = argv[2];
+
+	std::string mode = argv[3];
+	if (mode == "train")
+		Ostrava::train(directoryPath, fileName);
+	if (mode == "encrypt")
+		Ostrava::encrypt(directoryPath, fileName);
+	if (mode == "decrypt")
+		Ostrava::decrypt(directoryPath, fileName);
 
 	return 0;
 }

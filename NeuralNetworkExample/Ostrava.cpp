@@ -45,7 +45,7 @@ void Ostrava::train(std::string directoryPath, std::string fileName)
 	fann_destroy_train(dec_data);
 }
 
-std::string Ostrava::encrypt(std::string directoryPath, std::string fileName)
+void Ostrava::encrypt(std::string directoryPath, std::string fileName)
 {
 	struct stat filestatus;
 	stat((directoryPath + fileName).c_str(), &filestatus);
@@ -114,10 +114,9 @@ std::string Ostrava::encrypt(std::string directoryPath, std::string fileName)
 	}
 	ifile.close();
 	ofile.close();
-	return directoryPath + fileName + ".crypto";
 }
 
-std::string Ostrava::decrypt(std::string directoryPath, std::string fileName)
+void Ostrava::decrypt(std::string directoryPath, std::string fileName)
 {
 	struct fann * decryptor = fann_create_from_file((directoryPath + "decryptor.net").c_str());
 	EncryptionParameters encInfo;
@@ -195,7 +194,6 @@ std::string Ostrava::decrypt(std::string directoryPath, std::string fileName)
 	tempFile.close();
 	outFile.close();
 	std::remove((directoryPath + fileName + ".temp").c_str());
-	return directoryPath + fileName + ".decrypted";
 }
 
 Ostrava::EncryptionParameters Ostrava::analyzeFileSize(unsigned long fileSizeBytes, byte blockSizeBits)

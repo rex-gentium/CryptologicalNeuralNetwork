@@ -31,8 +31,8 @@ class Ostrava
 
 public:
 	static void train(std::string directoryPath, std::string fileName);
-	static std::string encrypt(std::string directoryPath, std::string fileName);
-	static std::string decrypt(std::string directoryPath, std::string fileName);
+	static void encrypt(std::string directoryPath, std::string fileName);
+	static void decrypt(std::string directoryPath, std::string fileName);
 private:
 	static EncryptionParameters analyzeFileSize(unsigned long fileSizeBytes, byte blockSizeBits = 0);
 	static EncryptionTable buildEncTable(byte blockSizeBits);

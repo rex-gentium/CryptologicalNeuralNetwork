@@ -1,10 +1,9 @@
-#include "GridinSolodovnikov.h"
 #include "Ostrava.h"
 #include <string>
 
 /// <summary>
 /// This method should be called with execution parameters
-/// <para>argv[1] - directory, where the file and network config files are to be located, e.g. "C:\\dump/hello" or "C:/dump\\hello\\"</para>
+/// <para>argv[1] - directory, where the file and network config files are to be located, e.g. "C:\dump/hello" or "C:/dump\hello\"</para>
 /// <para>argv[2] - file name, e.g. "myFile.txt"</para>
 /// <para>argv[3] - neural network mode, e.g. "train", "encrypt", "decrypt"</para>
 /// <para>Upon "train" completion, files "encryptor.net" and "decryptor.net" will appear in the same directory where the file is.</para>
@@ -13,7 +12,7 @@
 /// </summary>
 int main(int argc, const char * argv[])
 {
-	if (argc < 4) exit(1);
+	/*if (argc < 4) exit(1);
 
 	std::string directoryPath = argv[1];
 	if (directoryPath.back() != '\\' && directoryPath.back() != '/')
@@ -23,11 +22,12 @@ int main(int argc, const char * argv[])
 
 	std::string mode = argv[3];
 	if (mode == "train")
-		Ostrava::train(directoryPath, fileName);
-	if (mode == "encrypt")
-		Ostrava::encrypt(directoryPath, fileName);
-	if (mode == "decrypt")
-		Ostrava::decrypt(directoryPath, fileName);
-
+		CryptoANN::train(directoryPath, fileName);
+	else if (mode == "encrypt")
+		CryptoANN::encrypt(directoryPath, fileName);
+	else if (mode == "decrypt")
+		CryptoANN::decrypt(directoryPath, fileName);
+	else exit(-1);*/
+	CryptoANN::train("D:/", "test.txt");
 	return 0;
 }

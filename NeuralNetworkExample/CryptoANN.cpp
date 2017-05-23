@@ -1,11 +1,10 @@
-﻿#include "Ostrava.h"
-#include <fann.h>
+﻿#include "CryptoANN.h"
 #include <fstream>
 #include <vector>
 #include <queue>
 #include <bitset>
 
-void Ostrava::train(std::string directoryPath, std::string fileName)
+void CryptoANN::train(std::string directoryPath, std::string fileName)
 {
 	// 1. анализируем размер файла
 	struct stat filestatus;
@@ -15,20 +14,11 @@ void Ostrava::train(std::string directoryPath, std::string fileName)
 	// 3. заполняем таблицу соответсвий по блокам
 	EncryptionTable encTable = buildEncTable(encInfo.blockSize);
 	// 4. формируем тренировочные данные по таблице
-	struct fann_train_data * enc_data = fann_create_train(encTable.size, encInfo.blockSize, encInfo.blockSize);
+	struct fann_train_data * enc_data = fann_create_train(encTable.size, encInfo.blockSize, encInfo.blockSize);	
 	struct fann_train_data * dec_data = fann_create_train(encTable.size, encInfo.blockSize, encInfo.blockSize);
-	for (int i = 0; i < encTable.size; ++i) {
-		std::bitset<8> block(i);
-		std::bitset<8> cryptogram(encTable[i]); // заполнен ведущими нулями, не будем их учитывать
-		// битовые маски хранят биты по возрастанию порядков (reverse order)
-		for (int j = 0; j < encInfo.blockSize; ++j) {
-			enc_data->input[i][encInfo.blockSize - 1 - j] = block[j];
-			dec_data->output[i][encInfo.blockSize - 1 - j] = block[j];
-			enc_data->output[i][encInfo.blockSize - 1 - j] = cryptogram[j];
-			dec_data->input[i][encInfo.blockSize - 1 - j] = cryptogram[j];
-		}
-	}
-	// 5. обучаем сеть
+	encTable.toTrainData(enc_data, encInfo.blockSize);
+	encTable.toReversedTrainData(dec_data, encInfo.blockSize);
+	// 5. обучаем сети
 	struct fann * encryptor = fann_create_standard(3, encInfo.blockSize, encInfo.blockSize * encInfo.blockSize, encInfo.blockSize);
 	fann_set_activation_function_hidden(encryptor, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_output(encryptor, FANN_SIGMOID_SYMMETRIC);
@@ -36,33 +26,27 @@ void Ostrava::train(std::string directoryPath, std::string fileName)
 	fann_save(encryptor, (directoryPath + "encryptor.net").c_str());
 	fann_destroy(encryptor);
 	fann_destroy_train(enc_data);
+
 	struct fann * decryptor = fann_create_standard(3, encInfo.blockSize, encInfo.blockSize * encInfo.blockSize, encInfo.blockSize);
 	fann_set_activation_function_hidden(decryptor, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_output(decryptor, FANN_SIGMOID_SYMMETRIC);
-	fann_train_on_data(decryptor, dec_data, 200000, 1000, 0.00005f);
+	fann_train_on_data(decryptor, dec_data, 200000, 1000, 0.0001f);
 	fann_save(decryptor, (directoryPath + "decryptor.net").c_str());
 	fann_destroy(decryptor);
 	fann_destroy_train(dec_data);
 }
 
-void Ostrava::encrypt(std::string directoryPath, std::string fileName)
+void CryptoANN::encrypt(std::string directoryPath, std::string fileName)
 {
+	// 1. восстанавливаем шифратор и анализируем размер файла
 	struct stat filestatus;
 	stat((directoryPath + fileName).c_str(), &filestatus);
 	unsigned long fileSize = static_cast<unsigned long>(filestatus.st_size);
-	
 	struct fann * encryptor = fann_create_from_file((directoryPath + "encryptor.net").c_str());
 	EncryptionParameters encInfo = analyzeFileSize(fileSize, encryptor->num_input);
-	// дописываем необходимое число случайных байтов и байт-счётчик
-	std::ofstream inpFile(directoryPath + fileName, std::ios::binary | std::ios::app);
-	inpFile.seekp(std::ios::end);
-	for (int i = 0; i < encInfo.appendBytes; ++i) {
-		byte randomByte = rand() % (BYTE_MAX + 1);
-		inpFile.write((char *)&randomByte, 1);
-	}
-	inpFile.write((char *)&encInfo.appendBytes, 1);
-	inpFile.close();
-	// считываем файл поблочно
+	// 2. дописываем необходимое число случайных байтов и байт-счётчик
+	appendBytes(directoryPath + fileName, encInfo.appendBytes);
+	// 3. считываем файл поблочно
 	std::ifstream ifile(directoryPath + fileName, std::ios::binary);
 	std::ofstream ofile(directoryPath + fileName + ".crypto", std::ios::binary);
 	std::queue<byte> buffer; // очередь битов на ввод
@@ -116,7 +100,7 @@ void Ostrava::encrypt(std::string directoryPath, std::string fileName)
 	ofile.close();
 }
 
-void Ostrava::decrypt(std::string directoryPath, std::string fileName)
+void CryptoANN::decrypt(std::string directoryPath, std::string fileName)
 {
 	struct fann * decryptor = fann_create_from_file((directoryPath + "decryptor.net").c_str());
 	EncryptionParameters encInfo;
@@ -196,7 +180,7 @@ void Ostrava::decrypt(std::string directoryPath, std::string fileName)
 	std::remove((directoryPath + fileName + ".temp").c_str());
 }
 
-Ostrava::EncryptionParameters Ostrava::analyzeFileSize(unsigned long fileSizeBytes, byte blockSizeBits)
+CryptoANN::EncryptionParameters CryptoANN::analyzeFileSize(unsigned long fileSizeBytes, byte blockSizeBits)
 {
 	EncryptionParameters result;
 	result.appendBytes = BYTE_MAX;
@@ -217,7 +201,7 @@ Ostrava::EncryptionParameters Ostrava::analyzeFileSize(unsigned long fileSizeByt
 	return result;
 }
 
-Ostrava::EncryptionTable Ostrava::buildEncTable(byte blockSizeBits)
+CryptoANN::EncryptionTable CryptoANN::buildEncTable(byte blockSizeBits)
 {
 	EncryptionTable table;
 	table.size = 1;
@@ -235,4 +219,69 @@ Ostrava::EncryptionTable Ostrava::buildEncTable(byte blockSizeBits)
 	}
 	associations.clear();
 	return table;
+}
+
+void CryptoANN::appendBytes(std::string filePath, int byteCount)
+{
+	std::ofstream file(filePath, std::ios::binary | std::ios::app);
+	file.seekp(std::ios::end);
+	for (int i = 0; i < byteCount; ++i) {
+		byte randomByte = rand() % (BYTE_MAX + 1);
+		file.write((char *)&randomByte, 1);
+	}
+	file.write((char *)&byteCount, 1);
+	file.close();
+}
+
+CryptoANN::byte & CryptoANN::EncryptionTable::operator[](const byte key) const
+{
+	return data[key];
+}
+
+CryptoANN::EncryptionTable::~EncryptionTable()
+{
+	if (data != nullptr) delete[] data;
+}
+
+CryptoANN::EncryptionTable::EncryptionTable(const EncryptionTable & rhs)
+{
+	*this = rhs;
+}
+
+CryptoANN::EncryptionTable & CryptoANN::EncryptionTable::operator=(const EncryptionTable & rhs)
+{
+	if (data != nullptr) delete[] data;
+	size = rhs.size;
+	data = new byte[size];
+	for (int i = 0; i < size; ++i)
+		data[i] = rhs.data[i];
+	return *this;
+}
+
+void CryptoANN::EncryptionTable::toTrainData(fann_train_data * trainData, int blockSizeBits) const
+{
+	for (int i = 0; i < size; ++i) {
+		std::bitset<8> block(i); // шифруемый блок
+		std::bitset<8> cryptogram(data[i]); // результат шифрования
+		// блоки заполнены ведущими нулями, не будем их учитывать
+		// битовые маски хранят биты по возрастанию порядков (reverse order)
+		for (int j = 0; j < blockSizeBits; ++j) {
+			trainData->input[i][blockSizeBits - 1 - j] = block[j];
+			trainData->output[i][blockSizeBits - 1 - j] = cryptogram[j];
+		}
+	}
+}
+
+void CryptoANN::EncryptionTable::toReversedTrainData(fann_train_data * trainData, int blockSizeBits) const
+{
+	for (int i = 0; i < size; ++i) {
+		std::bitset<8> block(i); // шифруемый блок
+		std::bitset<8> cryptogram(data[i]); // результат шифрования
+		// блоки заполнены ведущими нулями, не будем их учитывать
+		// битовые маски хранят биты по возрастанию порядков (reverse order)
+		for (int j = 0; j < blockSizeBits; ++j) {
+			trainData->output[i][blockSizeBits - 1 - j] = block[j];
+			trainData->input[i][blockSizeBits - 1 - j] = cryptogram[j];
+		}
+	}
 }

@@ -4,26 +4,21 @@
 #include <fstream>
 #include <vector>
 
-const float GridinSolodovnikov::desired_error = 0.0001f;
-
 GridinSolodovnikov::byte * GridinSolodovnikov::Point::getBytes() const {
-	int size = sizeof(int);
-	byte * bytes = new byte[2 * size];
-	for (int i = 0; i < sizeof(int); ++i) {
-		bytes[size - 1 - i] = (x >> (i * 8));
-		bytes[2 * size - 1 - i] = (y >> (i * 8));
-	}
+	int size = sizeof(unsigned short);
+	byte * bytes = new byte[size];
+	bytes[0] = x;
+	bytes[1] = (x >> 8);
 	return bytes;
 }
 
-GridinSolodovnikov::Cluster GridinSolodovnikov::Cluster::newInstance(Cluster ** clusterMapping, int lastI, int lastJ, int * clusterCount, int maxRadius) {
+GridinSolodovnikov::Cluster GridinSolodovnikov::Cluster::newInstance(Cluster ** clusterMapping, int lastI, int lastJ, int * clusterCount, unsigned char maxRadius) {
 	Cluster cluster;
 	bool isWrong;
 	do {
 		isWrong = false;
 		cluster.center.x = rand();
-		cluster.center.y = rand();
-		cluster.radius = rand() % maxRadius;
+		cluster.radius = 1 + rand() % maxRadius;
 		for (int i = 0; i <= lastI; ++i)
 			for (int j = 0; j <= ((i < lastI || lastJ < 0) ? clusterCount[i] - 1 : lastJ); ++j)
 				if (cluster.hasInterception(clusterMapping[i][j]))
@@ -33,18 +28,14 @@ GridinSolodovnikov::Cluster GridinSolodovnikov::Cluster::newInstance(Cluster ** 
 }
 
 bool GridinSolodovnikov::Cluster::hasInterception(const Cluster& that) const {
-	int subX = this->center.x - that.center.x;
-	int subY = this->center.y - that.center.y;
-	float distance = sqrt(subX * subX + subY * subY);
-	return distance <= static_cast<float>(this->radius + that.radius);
+	short distance = abs(this->center.x - that.center.x);
+	return distance <= (this->radius + that.radius);
 }
 
 GridinSolodovnikov::Point GridinSolodovnikov::Cluster::randomInnerPoint() const {
 	Point result;
-	float angle = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / 3.14f));
-	int r = rand() % this->radius;
-	result.x = this->center.x + r * cosf(angle);
-	result.y = this->center.y + r * sinf(angle);
+	char shift = ((rand() % UCHAR_MAX) - CHAR_MAX) % this->radius;
+	result.x = this->center.x + shift;
 	return result;
 }
 
@@ -54,12 +45,13 @@ void GridinSolodovnikov::train(std::string directoryPath, std::string fileName)
 	// 1. частотный анализ файла по классам
 	int * freq = countByteFrequency(directoryPath + fileName);
 	// 2. ставим в соответсвие число областей и генерируем области
-	int * clusterCount = rangeClusterCount(freq, 1, 10);
+	unsigned char maxClusterCount = 10; // should be less than 64
+	int * clusterCount = rangeClusterCount(freq, 1, maxClusterCount);
 	delete[] freq;
 	int sum = 0;
 	for (int i = 0; i < BYTE_MAX + 1; ++i)
 		sum += clusterCount[i];
-	long maxRadius = 2 * static_cast<int> (INT_MAX / sqrt(sum)); // sum >= 256, then maxRadius < 2^29 < INT_MAX (2^31)
+	unsigned char maxRadius = USHRT_MAX / (2 * sum);
 	Cluster ** clusters = new Cluster*[BYTE_MAX + 1];
 	for (int i = 0; i < BYTE_MAX + 1; ++i) {
 		int clusterCountI = clusterCount[i];
@@ -69,10 +61,10 @@ void GridinSolodovnikov::train(std::string directoryPath, std::string fileName)
 			int lastJ = j - 1;
 			int lastI = (lastJ < 0) ? i - 1 : i;
 			clusters[i][j] = Cluster::newInstance(clusters, lastI, lastJ, clusterCount, maxRadius);
-			std::cout << "\t(" << clusters[i][j].center.x << ", " << clusters[i][j].center.y << "), R=" << clusters[i][j].radius << std::endl;
+			std::cout << "\t(" << clusters[i][j].center.x - clusters[i][j].radius << ", " << clusters[i][j].center.x + clusters[i][j].radius << ")" << std::endl;
 		}
 	}
-	// 3. ставим в соответсвие байту из входного файла случайную точку из случайной области, к нему относящейся
+	// 3. ставим в соответствие байту из входного файла случайную точку из случайной области, к нему относящейся
 	std::ifstream inputFile(directoryPath + fileName, std::ios::binary);
 	std::vector<Point> points;
 	std::vector<byte> bytes;
@@ -88,16 +80,17 @@ void GridinSolodovnikov::train(std::string directoryPath, std::string fileName)
 	delete[] clusters;
 	inputFile.close();
 	// 4. формируем сет тренировочных данных
-	struct fann_train_data * encryptor_train_data = fann_create_train(points.size(), 1, 2);
-	struct fann_train_data * decryptor_train_data = fann_create_train(points.size(), 2, 1);
+	struct fann_train_data * encryptor_train_data = fann_create_train(points.size(), 1, 1);
+	struct fann_train_data * decryptor_train_data = fann_create_train(points.size(), 1, 1);
 	std::ofstream test_data_file("D:/data.dat");
 	test_data_file << points.size() << " 2 1" << std::endl;
 	for (int i = points.size() - 1; i >= 0; --i) {
-		decryptor_train_data->input[i][0] = encryptor_train_data->output[i][0] = points[i].x / static_cast<float>(INT_MAX);
-		decryptor_train_data->input[i][1] = encryptor_train_data->output[i][1] = points[i].y / static_cast<float>(INT_MAX);
-		test_data_file << decryptor_train_data->input[i][0] << ' ' << decryptor_train_data->input[i][1] << std::endl;
+		decryptor_train_data->input[i][0] = points[i].x / static_cast<float>(USHRT_MAX);
+		encryptor_train_data->output[i][0] = points[i].x / static_cast<float>(USHRT_MAX);
+		test_data_file << decryptor_train_data->input[i][0] << ' ';
 		points.pop_back();
-		decryptor_train_data->output[i][0] = encryptor_train_data->input[i][0] = bytes[i] / 255.0f;
+		decryptor_train_data->output[i][0] = bytes[i] / 255.0f;
+		encryptor_train_data->input[i][0] = bytes[i] / 255.0f;
 		test_data_file << decryptor_train_data->output[i][0] << std::endl;
 		bytes.pop_back();
 	}
@@ -105,14 +98,14 @@ void GridinSolodovnikov::train(std::string directoryPath, std::string fileName)
 	bytes.clear();
 	test_data_file.close();
 	// 5. тренируем шифратор и дешифратор
-	struct fann *encryptor = fann_create_standard(num_layers, 1, 256, 128, 64, 32, 16, 8, 4, 2);
-	struct fann *decryptor = fann_create_standard(4, 2, 1024, 256, 1);
+	struct fann *encryptor = fann_create_standard(3, 1, 256, 1);
+	struct fann *decryptor = fann_create_standard(3, 1, 256, 1);
 	fann_set_activation_function_hidden(encryptor, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_output(encryptor, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_hidden(decryptor, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_output(decryptor, FANN_SIGMOID_SYMMETRIC);
-	//fann_train_on_data(encryptor, encryptor_train_data, max_epochs, epochs_between_reports, 0.0000001f);
-	fann_train_on_data(decryptor, decryptor_train_data, max_epochs, epochs_between_reports, 0.0000001f);
+	fann_train_on_data(encryptor, encryptor_train_data, 50000, 1, 0.0000001f);
+	fann_train_on_data(decryptor, decryptor_train_data, 50000, 1, 0.0000001f);
 	
 	fann_save(encryptor, (directoryPath + ".encryptor").c_str());
 	fann_save(decryptor, (directoryPath + ".decryptor").c_str());
@@ -121,7 +114,7 @@ void GridinSolodovnikov::train(std::string directoryPath, std::string fileName)
 	fann_destroy(decryptor);
 }
 
-std::string GridinSolodovnikov::cipher(std::string directoryPath, std::string fileName)
+void GridinSolodovnikov::encrypt(std::string directoryPath, std::string fileName)
 {
 	struct fann * encryptor = fann_create_from_file((directoryPath + ".encryptor").c_str());
 	std::ifstream inputFile(directoryPath + fileName, std::ios::binary);
@@ -130,35 +123,28 @@ std::string GridinSolodovnikov::cipher(std::string directoryPath, std::string fi
 	while (!inputFile.eof()) {
 		inputFile >> std::noskipws >> b;
 		fann_type * output = fann_run(encryptor, (fann_type *)&b);
-		float x = output[0] * INT_MAX, y = output[1] * INT_MAX;
+		float x = output[0] * USHRT_MAX;
 		Point cipherPoint;
-		cipherPoint.x = static_cast<int>(roundf(x));
-		cipherPoint.y = static_cast<int>(roundf(y));
+		cipherPoint.x = static_cast<unsigned short>(roundf(x));
 		byte * bytes = cipherPoint.getBytes();
-		outputFile.write((char *)bytes, 2 * sizeof(int));
+		outputFile.write((char *)bytes, sizeof(unsigned short));
 		delete[] bytes;
 		//delete[] output;
 	}
-	return fileName + ".crypto";
 }
 
-std::string GridinSolodovnikov::decipher(std::string directoryPath, std::string fileName)
+void GridinSolodovnikov::decrypt(std::string directoryPath, std::string fileName)
 {
 	struct fann * decryptor = fann_create_from_file((directoryPath + ".decryptor").c_str());
 	std::ifstream inputFile(directoryPath + fileName, std::ios::binary);
 	std::ofstream outputFile(directoryPath + fileName + ".decrypted.txt", std::ios::binary);
-	fann_type * input = new float[2]; 
 	while (!inputFile.eof()) {
 		Point p = getNextPoint(inputFile);
-		input[0] = p.x / static_cast<float>(INT_MAX);
-		input[1] = p.y / static_cast<float>(INT_MAX);
-		fann_type * output = fann_run(decryptor, input);
+		fann_type input = (fann_type) (p.x / static_cast<float>(USHRT_MAX));
+		fann_type * output = fann_run(decryptor, &input);
 		byte b = static_cast<byte>(output[0] * 255.0f);
 		outputFile.write((char *)&b, 1);
-		//delete[] output;
 	}
-	delete[] input;
-	return fileName + ".decrypted.txt";
 }
 
 int * GridinSolodovnikov::countByteFrequency(std::string filePath)
@@ -194,7 +180,7 @@ int * GridinSolodovnikov::rangeClusterCount(const int * frequencies, int minClus
 	return clusters;
 }
 
-std::vector<GridinSolodovnikov::byte> GridinSolodovnikov::getFileBytes(std::string filePath)
+/*std::vector<GridinSolodovnikov::byte> GridinSolodovnikov::getFileBytes(std::string filePath)
 {
 	std::vector<byte> bytes;
 	std::ifstream file(filePath, std::ios::binary);
@@ -205,26 +191,18 @@ std::vector<GridinSolodovnikov::byte> GridinSolodovnikov::getFileBytes(std::stri
 	}
 	file.close();
 	return bytes;
-}
+}*/
 
 GridinSolodovnikov::Point GridinSolodovnikov::getNextPoint(std::ifstream & file) {
 	byte b;
-	int x = 0, y = 0;
 	Point point;
-	for (int i = 0; i < sizeof(int); ++i) {
+	point.x = 0;
+	for (int i = 0; i < sizeof(unsigned short); ++i) {
 		file >> std::noskipws >> b;
-		int byteAsInt = (int)b;
-		int shift = 8 * (sizeof(int) - i - 1);
-		x |= (byteAsInt << shift);
+		unsigned short byteAsUShort = (unsigned short)b;
+		int shift = 8 * (sizeof(unsigned short) - i - 1);
+		point.x |= (byteAsUShort << shift);
 	}
-	for (int i = 0; i < sizeof(int); ++i) {
-		file >> std::noskipws >> b;
-		int byteAsInt = (int)b;
-		int shift = 8 * (sizeof(int) - i - 1);
-		y |= (byteAsInt << shift);
-	}
-	point.x = x;
-	point.y = y;
 	return point;
 }
 

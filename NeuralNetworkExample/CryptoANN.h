@@ -4,6 +4,7 @@
 
 class CryptoANN
 {
+public:
 	using byte = unsigned char;
 	static const unsigned int BYTE_MIN = 0;
 	static const unsigned int BYTE_MAX = UCHAR_MAX;
@@ -25,7 +26,6 @@ class CryptoANN
 		void toReversedTrainData(fann_train_data * trainData, int blockSizeBits) const;
 	};
 
-public:
 	/* тренирует шифрующую и дешифрующую нейронные сети с использованием файла, сохраняет конфигурацию сетей в директорию */
 	static void train(std::string directoryPath, std::string fileName);
 	/* восстанавливает шифрующую сеть из конфигурационного файла в директории, шифрует файл, сохраняет результат в директории */
@@ -40,5 +40,8 @@ private:
 	static EncryptionTable buildEncTable(byte blockSizeBits);
 	/* дозаписывает в конец файла заданное количество байтов */
 	static void appendBytes(std::string filePath, int byteCount);
+	/**/
+	static void processBuffer(byte * buffer, int bufferSize, int blockSizeBits, std::string encryptorPath);
+	static void processBufferFast(byte * buffer, int bufferSize, int blockSizeBits, std::string encryptorPath);
 };
 

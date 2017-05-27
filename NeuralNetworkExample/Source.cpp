@@ -1,5 +1,6 @@
-#include "Ostrava.h"
+#include "CryptoANN.h"
 #include <string>
+#include <chrono>
 
 /// <summary>
 /// This method should be called with execution parameters
@@ -12,7 +13,7 @@
 /// </summary>
 int main(int argc, const char * argv[])
 {
-	/*if (argc < 4) exit(1);
+	if (argc < 4) exit(1);
 
 	std::string directoryPath = argv[1];
 	if (directoryPath.back() != '\\' && directoryPath.back() != '/')
@@ -27,7 +28,7 @@ int main(int argc, const char * argv[])
 		CryptoANN::encrypt(directoryPath, fileName);
 	else if (mode == "decrypt")
 		CryptoANN::decrypt(directoryPath, fileName);
-	else exit(-1);*/
-	CryptoANN::train("D:/", "test.txt");
+	else exit(-1);
+
 	return 0;
 }
